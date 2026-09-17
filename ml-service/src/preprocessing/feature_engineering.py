@@ -448,3 +448,6 @@ def extract_human_risk_factors(
         factors.append("Routine Civic Maintenance Requirement")
         
     return factors
+
+# Alias for backward compatibility
+extract_safety_score = calculate_safety_score

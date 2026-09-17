@@ -9,7 +9,9 @@ import {
   Camera, 
   ShieldAlert, 
   Send,
-  Navigation
+  Navigation,
+  Film,
+  Sparkles
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -188,6 +190,39 @@ export default function OfficerDashboard({ setCurrentRoute, setSelectedComplaint
                     {task.description}
                   </p>
 
+                  {/* Citizen Evidence Preview */}
+                  {((task.evidence && task.evidence.length > 0) || task.image_url) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Citizen Evidence:
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
+                        {(task.evidence && task.evidence.length > 0 ? task.evidence : [{ secure_url: task.image_url, resource_type: 'image' }]).map((ev, i) => (
+                          <div 
+                            key={i} 
+                            style={{ 
+                              width: '48px', 
+                              height: '48px', 
+                              borderRadius: '6px', 
+                              overflow: 'hidden', 
+                              border: '1px solid var(--border-subtle)',
+                              background: '#0f172a',
+                              flexShrink: 0
+                            }}
+                          >
+                            {ev.resource_type === 'video' ? (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(59, 130, 246, 0.2)' }}>
+                                <Film size={18} color="var(--accent-cyan)" />
+                              </div>
+                            ) : (
+                              <img src={ev.thumbnail_url || ev.optimized_url || ev.secure_url} alt="Evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.825rem', color: 'var(--text-muted)' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -243,6 +278,43 @@ export default function OfficerDashboard({ setCurrentRoute, setSelectedComplaint
           title={`Mark Complaint Resolved #${resolvingComplaint?.tracking_id}`}
         >
           <form onSubmit={handleResolveSubmit}>
+            {/* Before vs After Resolution Preview */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                  Original Citizen Evidence (Before):
+                </label>
+                <div style={{ height: '120px', background: '#090d16', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {(resolvingComplaint?.image_url || resolvingComplaint?.evidence?.[0]?.secure_url) ? (
+                    <img 
+                      src={resolvingComplaint.image_url || resolvingComplaint.evidence[0].secure_url} 
+                      alt="Before" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No before photo attached</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: '0.76rem', color: 'var(--accent-emerald)' }}>
+                  Officer Resolution Proof (After):
+                </label>
+                <div style={{ height: '120px', background: '#090d16', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {resolutionFilePreview ? (
+                    <img 
+                      src={resolutionFilePreview} 
+                      alt="After Proof" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Select proof photo below</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="form-group">
               <label className="form-label">Field Resolution Work Description:</label>
               <textarea 

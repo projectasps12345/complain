@@ -1,4 +1,6 @@
 const db = require('../models/db');
+const cloudinaryService = require('../services/cloudinaryService');
+const mlClient = require('../services/mlClient');
 
 class OfficerController {
   /**
@@ -16,6 +18,15 @@ class OfficerController {
       } else {
         tasks = db.prepare('SELECT * FROM complaints WHERE officer_id = ?').all(officerId);
       }
+
+      tasks = tasks.map(t => {
+        const evidence = db.getEvidenceByComplaintId(t.id);
+        return {
+          ...t,
+          evidence
+        };
+      });
+
       res.json({ tasks });
     } catch (err) {
       console.error('Officer tasks error:', err);
@@ -26,7 +37,7 @@ class OfficerController {
   /**
    * Update task status (Mark In Progress or Resolve with proof photo)
    */
-  updateTaskStatus(req, res) {
+  async updateTaskStatus(req, res) {
     try {
       const officerId = req.user.id;
       const officerName = req.user.name || 'Field Officer';
@@ -48,8 +59,54 @@ class OfficerController {
       }
 
       let resolutionImageUrl = complaint.resolution_image_url;
-      if (req.file) {
-        resolutionImageUrl = `/uploads/${req.file.filename}`;
+      let resolutionEvidenceRecord = null;
+
+      const uploadedFile = req.file || req.files?.resolution_image?.[0] || req.files?.image?.[0];
+
+      if (uploadedFile) {
+        try {
+          const uploadRes = await cloudinaryService.uploadEvidence(uploadedFile.path, {
+            complaintId: complaint.tracking_id || complaint.id,
+            folderType: 'resolution',
+            resourceType: 'image',
+            originalFilename: req.file.originalname,
+            tags: ['resolution', complaint.category]
+          });
+
+          resolutionImageUrl = uploadRes.secure_url;
+
+          resolutionEvidenceRecord = db.insertEvidence({
+            complaint_id: complaint.id,
+            uploaded_by: officerId,
+            cloudinary_public_id: uploadRes.cloudinary_public_id,
+            cloudinary_url: uploadRes.cloudinary_url,
+            secure_url: uploadRes.secure_url,
+            resource_type: uploadRes.resource_type,
+            format: uploadRes.format,
+            original_filename: uploadRes.original_filename,
+            file_size: uploadRes.file_size,
+            width: uploadRes.width,
+            height: uploadRes.height,
+            thumbnail_url: uploadRes.thumbnail_url,
+            evidence_type: 'resolution',
+            is_sensitive: Boolean(complaint.is_crime || complaint.is_sensitive)
+          });
+
+          db.logEvidenceAudit({
+            complaint_id: complaint.id,
+            evidence_id: resolutionEvidenceRecord.id,
+            cloudinary_public_id: uploadRes.cloudinary_public_id,
+            action: 'UPLOAD',
+            user_id: officerId,
+            user_role: 'officer',
+            user_name: officerName,
+            ip_address: req.ip || '127.0.0.1',
+            details: `Officer uploaded resolution proof photo: ${req.file.originalname} to Cloudinary`
+          });
+        } catch (uploadErr) {
+          console.error('Resolution photo upload error:', uploadErr);
+          resolutionImageUrl = `/uploads/${req.file.filename}`;
+        }
       } else if (req.body.resolution_image_url) {
         resolutionImageUrl = req.body.resolution_image_url;
       }
@@ -60,11 +117,12 @@ class OfficerController {
           SET status = 'Resolved',
               resolution_notes = ?,
               resolution_image_url = ?,
+              resolution_evidence_id = ?,
               officer_id = ?,
               resolved_at = CURRENT_TIMESTAMP,
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).run(notes || 'Issue successfully resolved on-site.', resolutionImageUrl, officerId, complaint.id);
+        `).run(notes || 'Issue successfully resolved on-site.', resolutionImageUrl, resolutionEvidenceRecord?.id || null, officerId, complaint.id);
 
         db.prepare(`
           INSERT INTO complaint_timeline (complaint_id, status, notes, updated_by_name, updated_by_user_id)

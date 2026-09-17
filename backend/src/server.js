@@ -37,6 +37,8 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/analytics', analyticsRoutes);
 const locationRoutes = require('./routes/locationRoutes');
 app.use('/api/location', locationRoutes);
+const evidenceRoutes = require('./routes/evidenceRoutes');
+app.use('/api/evidence', evidenceRoutes);
 
 const mlClient = require('./services/mlClient');
 

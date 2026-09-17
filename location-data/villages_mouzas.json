@@ -1,5 +1,5 @@
 [
-  { "id": 1, "gram_panchayat_id": 1, "name": "Adhata", "mouza": "Adhata", "jl_no": "42", "lat": 22.8060, "lng": 88.5260, "is_active": 1 },
+  { "id": 1, "gram_panchayat_id": 1, "name": "Adhata", "mouza": "Adhata", "jl_no": "42", "lat": 22.8683, "lng": 88.5334, "is_active": 1 },
   { "id": 2, "gram_panchayat_id": 1, "name": "Sadhanpur", "mouza": "Sadhanpur", "jl_no": "43", "lat": 22.8090, "lng": 88.5290, "is_active": 1 },
   { "id": 3, "gram_panchayat_id": 1, "name": "Sonadanga", "mouza": "Sonadanga", "jl_no": "44", "lat": 22.8030, "lng": 88.5210, "is_active": 1 },
   { "id": 4, "gram_panchayat_id": 1, "name": "Joypul", "mouza": "Joypul", "jl_no": "45", "lat": 22.8120, "lng": 88.5320, "is_active": 1 },

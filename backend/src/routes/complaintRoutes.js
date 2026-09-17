@@ -9,7 +9,12 @@ router.get('/public', (req, res) => complaintController.getPublicComplaints(req,
 router.post('/preview-ml', (req, res) => complaintController.previewML(req, res));
 
 // Authenticated citizen endpoints
-router.post('/', authMiddleware, upload.single('image'), (req, res) => complaintController.createComplaint(req, res));
+router.post(
+  '/',
+  authMiddleware,
+  upload.fields([{ name: 'evidence', maxCount: 5 }, { name: 'image', maxCount: 1 }]),
+  (req, res) => complaintController.createComplaint(req, res)
+);
 router.get('/my', authMiddleware, (req, res) => complaintController.getMyComplaints(req, res));
 router.post('/:id/upvote', authMiddleware, (req, res) => complaintController.upvoteComplaint(req, res));
 router.post('/:id/reopen', authMiddleware, (req, res) => complaintController.reopenComplaint(req, res));

@@ -46,6 +46,7 @@ import {
   Clock,
   Activity
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 export const ALL_30_DEPARTMENTS_DATA = [
   {
@@ -532,6 +533,7 @@ const GROUP_CONFIG = {
 };
 
 export default function DepartmentDirectory({ onSelectDepartment }) {
+  const { isDark } = useTheme();
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   const [copiedItem, setCopiedItem] = useState(null);
@@ -575,11 +577,15 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
       <div 
         className="dept-banner-container"
         style={{
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.82) 50%, rgba(15, 23, 42, 0.94) 100%)',
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.82) 50%, rgba(15, 23, 42, 0.94) 100%)'
+            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 245, 249, 0.94) 50%, rgba(255, 255, 255, 0.98) 100%)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(59, 130, 246, 0.22)',
-          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          border: isDark ? '1px solid rgba(59, 130, 246, 0.22)' : '1px solid rgba(37, 99, 235, 0.16)',
+          boxShadow: isDark
+            ? '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            : '0 16px 36px -10px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -591,7 +597,9 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           right: '-60px',
           width: '260px',
           height: '260px',
-          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(6, 182, 212, 0.08) 40%, rgba(0,0,0,0) 70%)',
+          background: isDark
+            ? 'radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(6, 182, 212, 0.08) 40%, rgba(0,0,0,0) 70%)'
+            : 'radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(6, 182, 212, 0.06) 40%, rgba(255,255,255,0) 70%)',
           borderRadius: '50%',
           pointerEvents: 'none',
           filter: 'blur(30px)'
@@ -613,9 +621,11 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           <span 
             className="dept-badge-pill"
             style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.12))',
-              color: '#60a5fa',
-              border: '1px solid rgba(96, 165, 250, 0.35)',
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.12))'
+                : 'rgba(37, 99, 235, 0.1)',
+              color: isDark ? '#60a5fa' : '#2563eb',
+              border: isDark ? '1px solid rgba(96, 165, 250, 0.35)' : '1px solid rgba(37, 99, 235, 0.25)',
               borderRadius: '20px',
               padding: '4px 10px',
               fontSize: '0.74rem',
@@ -632,9 +642,11 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           <span 
             className="dept-badge-pill"
             style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.12))',
-              color: '#f87171',
-              border: '1px solid rgba(248, 113, 113, 0.35)',
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.12))'
+                : 'rgba(239, 68, 68, 0.1)',
+              color: isDark ? '#f87171' : '#dc2626',
+              border: isDark ? '1px solid rgba(248, 113, 113, 0.35)' : '1px solid rgba(239, 68, 68, 0.25)',
               borderRadius: '20px',
               padding: '4px 10px',
               fontSize: '0.74rem',
@@ -651,9 +663,11 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           <span 
             className="dept-badge-pill"
             style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.12))',
-              color: '#34d399',
-              border: '1px solid rgba(52, 211, 153, 0.35)',
+              background: isDark
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.12))'
+                : 'rgba(16, 185, 129, 0.1)',
+              color: isDark ? '#34d399' : '#059669',
+              border: isDark ? '1px solid rgba(52, 211, 153, 0.35)' : '1px solid rgba(16, 185, 129, 0.25)',
               borderRadius: '20px',
               padding: '4px 10px',
               fontSize: '0.74rem',
@@ -684,7 +698,7 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
               className="dept-hero-title"
               style={{
                 fontWeight: 900,
-                color: '#ffffff',
+                color: isDark ? '#ffffff' : '#0f172a',
                 marginBottom: '8px',
                 fontFamily: 'var(--font-heading)',
                 letterSpacing: '-0.5px'
@@ -692,7 +706,9 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
             >
               30 Municipal Departments,{' '}
               <span style={{
-                background: 'linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #34d399 100%)',
+                background: isDark
+                  ? 'linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #34d399 100%)'
+                  : 'linear-gradient(135deg, #2563eb 0%, #0284c7 50%, #059669 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
@@ -702,7 +718,7 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
             <p 
               className="dept-hero-desc"
               style={{
-                color: 'var(--text-secondary)',
+                color: isDark ? 'var(--text-secondary)' : '#475569',
                 margin: 0
               }}
             >
@@ -714,15 +730,15 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           <div 
             className="dept-kpi-grid"
             style={{
-              background: 'rgba(15, 23, 42, 0.65)',
+              background: isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(255, 255, 255, 0.92)',
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.09)',
               borderRadius: '16px',
               padding: '12px 16px',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)'
+              boxShadow: isDark ? '0 8px 24px rgba(0, 0, 0, 0.25)' : '0 4px 16px rgba(15, 23, 42, 0.06)'
             }}
           >
-            <div style={{ textAlign: 'center', borderRight: '1px solid rgba(255, 255, 255, 0.08)', paddingRight: '8px' }}>
+            <div style={{ textAlign: 'center', borderRight: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.08)', paddingRight: '8px' }}>
               <div 
                 className="dept-kpi-number"
                 style={{ fontWeight: 900, color: 'var(--accent-primary)', lineHeight: 1 }}
@@ -737,10 +753,10 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
               </div>
             </div>
 
-            <div style={{ textAlign: 'center', borderRight: '1px solid rgba(255, 255, 255, 0.08)', paddingRight: '8px' }}>
+            <div style={{ textAlign: 'center', borderRight: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.08)', paddingRight: '8px' }}>
               <div 
                 className="dept-kpi-number"
-                style={{ fontWeight: 900, color: '#f87171', lineHeight: 1 }}
+                style={{ fontWeight: 900, color: isDark ? '#f87171' : '#dc2626', lineHeight: 1 }}
               >
                 {emergencyCount}
               </div>
@@ -755,7 +771,7 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
             <div style={{ textAlign: 'center' }}>
               <div 
                 className="dept-kpi-number"
-                style={{ fontWeight: 900, color: '#34d399', lineHeight: 1 }}
+                style={{ fontWeight: 900, color: isDark ? '#34d399' : '#059669', lineHeight: 1 }}
               >
                 100%
               </div>
@@ -781,12 +797,18 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           <div style={{
             position: 'relative',
             width: '100%',
-            background: 'rgba(15, 23, 42, 0.85)',
+            background: isDark ? 'rgba(15, 23, 42, 0.85)' : '#ffffff',
             borderRadius: '14px',
-            border: search ? '1px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.12)',
+            border: search 
+              ? '1px solid var(--accent-primary)' 
+              : isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(15, 23, 42, 0.12)',
             boxShadow: search 
-              ? '0 0 0 3px rgba(59, 130, 246, 0.25), 0 8px 24px rgba(0,0,0,0.3)' 
-              : '0 6px 20px rgba(0, 0, 0, 0.25)',
+              ? isDark 
+                ? '0 0 0 3px rgba(59, 130, 246, 0.25), 0 8px 24px rgba(0,0,0,0.3)' 
+                : '0 0 0 3px rgba(37, 99, 235, 0.18), 0 6px 18px rgba(15, 23, 42, 0.08)'
+              : isDark
+                ? '0 6px 20px rgba(0, 0, 0, 0.25)'
+                : '0 4px 14px rgba(15, 23, 42, 0.05)',
             transition: 'all 0.25s ease',
             display: 'flex',
             alignItems: 'center'
@@ -813,7 +835,7 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                 minWidth: 0,
                 background: 'transparent',
                 border: 'none',
-                color: 'var(--text-primary)',
+                color: isDark ? '#ffffff' : '#0f172a',
                 fontFamily: 'var(--font-body)',
                 outline: 'none'
               }}
@@ -823,8 +845,8 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingRight: '12px', flexShrink: 0 }}>
                 <span style={{
                   fontSize: '0.74rem',
-                  color: 'var(--accent-cyan)',
-                  background: 'rgba(6, 182, 212, 0.12)',
+                  color: isDark ? 'var(--accent-cyan)' : '#0284c7',
+                  background: isDark ? 'rgba(6, 182, 212, 0.12)' : 'rgba(2, 132, 199, 0.1)',
                   padding: '3px 8px',
                   borderRadius: '10px',
                   fontWeight: 700
@@ -834,12 +856,12 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                 <button
                   onClick={() => setSearch('')}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.06)',
                     border: 'none',
                     borderRadius: '50%',
                     width: '24px',
                     height: '24px',
-                    color: 'var(--text-muted)',
+                    color: isDark ? 'var(--text-muted)' : '#64748b',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -855,9 +877,9 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
               <div className="dept-portal-tag" style={{ paddingRight: '14px', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 <span style={{
                   fontSize: '0.72rem',
-                  color: 'var(--text-muted)',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: isDark ? 'var(--text-muted)' : '#64748b',
+                  background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.05)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.08)',
                   padding: '3px 7px',
                   borderRadius: '6px',
                   fontWeight: 700
@@ -898,10 +920,14 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                     gap: '7px',
                     background: isActive 
                       ? `linear-gradient(135deg, ${tab.color}, ${tab.color}dd)` 
-                      : 'rgba(30, 41, 59, 0.65)',
-                    color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                    borderColor: isActive ? tab.color : 'rgba(255, 255, 255, 0.08)',
-                    boxShadow: isActive ? `0 4px 16px ${tab.color}40` : 'none',
+                      : isDark ? 'rgba(30, 41, 59, 0.65)' : '#ffffff',
+                    color: isActive ? '#ffffff' : isDark ? 'var(--text-secondary)' : '#475569',
+                    borderColor: isActive 
+                      ? tab.color 
+                      : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.1)',
+                    boxShadow: isActive 
+                      ? `0 4px 16px ${tab.color}40` 
+                      : isDark ? 'none' : '0 2px 6px rgba(15, 23, 42, 0.04)',
                     transform: isActive ? 'translateY(-1px)' : 'none'
                   }}
                 >
@@ -911,8 +937,10 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                     fontSize: '0.7rem',
                     padding: '1px 5px',
                     borderRadius: '8px',
-                    background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                    color: isActive ? '#ffffff' : 'var(--text-muted)',
+                    background: isActive 
+                      ? 'rgba(255, 255, 255, 0.25)' 
+                      : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.06)',
+                    color: isActive ? '#ffffff' : isDark ? 'var(--text-muted)' : '#64748b',
                     fontWeight: 800
                   }}>
                     {tab.count}
@@ -929,10 +957,10 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
         <div style={{
           textAlign: 'center',
           padding: '50px 20px',
-          background: 'rgba(15, 23, 42, 0.75)',
+          background: isDark ? 'rgba(15, 23, 42, 0.75)' : '#ffffff',
           borderRadius: '20px',
-          border: '1px dashed rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)'
+          border: isDark ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed rgba(15, 23, 42, 0.15)',
+          boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.2)' : '0 8px 30px rgba(15, 23, 42, 0.06)'
         }}>
           <div style={{
             width: '56px',
@@ -947,10 +975,10 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
           }}>
             <AlertTriangle size={28} />
           </div>
-          <h3 style={{ color: '#ffffff', fontSize: '1.15rem', fontWeight: 800, marginBottom: '6px' }}>
+          <h3 style={{ color: isDark ? '#ffffff' : '#0f172a', fontSize: '1.15rem', fontWeight: 800, marginBottom: '6px' }}>
             No Matching Departments Found
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '440px', margin: '0 auto 18px' }}>
+          <p style={{ color: isDark ? 'var(--text-secondary)' : '#64748b', fontSize: '0.88rem', maxWidth: '440px', margin: '0 auto 18px' }}>
             We couldn't find any division matching "{search}". Try searching for keywords like "Police", "Water", "Electricity", "Pothole", or "112".
           </p>
           <button
@@ -974,17 +1002,23 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
             return (
               <div 
                 key={dept.id}
-                className="dept-card"
+                className={`dept-card ${dept.isEmergency ? 'is-emergency' : ''}`}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(26, 34, 52, 0.92) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                  background: isDark
+                    ? 'linear-gradient(180deg, rgba(26, 34, 52, 0.92) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                    : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
                   border: dept.isEmergency 
-                    ? '1px solid rgba(239, 68, 68, 0.35)' 
-                    : '1px solid rgba(255, 255, 255, 0.08)',
+                    ? isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(239, 68, 68, 0.3)' 
+                    : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.09)',
                   boxShadow: dept.isEmergency
-                    ? '0 10px 30px -10px rgba(239, 68, 68, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3)'
-                    : '0 10px 30px -10px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2)',
+                    ? isDark 
+                      ? '0 10px 30px -10px rgba(239, 68, 68, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3)' 
+                      : '0 10px 25px -5px rgba(239, 68, 68, 0.08), 0 4px 10px -2px rgba(239, 68, 68, 0.04)'
+                    : isDark
+                      ? '0 10px 30px -10px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2)'
+                      : '0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 4px 10px -2px rgba(15, 23, 42, 0.03)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -995,18 +1029,26 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-3px)';
                   e.currentTarget.style.boxShadow = dept.isEmergency
-                    ? '0 16px 32px -10px rgba(239, 68, 68, 0.35), 0 0 20px rgba(239, 68, 68, 0.2)'
-                    : '0 16px 32px -10px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.15)';
+                    ? isDark 
+                      ? '0 16px 32px -10px rgba(239, 68, 68, 0.35), 0 0 20px rgba(239, 68, 68, 0.2)'
+                      : '0 16px 32px -8px rgba(239, 68, 68, 0.22), 0 4px 14px rgba(239, 68, 68, 0.12)'
+                    : isDark
+                      ? '0 16px 32px -10px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.15)'
+                      : '0 16px 36px -8px rgba(37, 99, 235, 0.16), 0 4px 14px rgba(37, 99, 235, 0.08)';
                   e.currentTarget.style.borderColor = dept.isEmergency ? '#ef4444' : 'var(--accent-primary)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = dept.isEmergency
-                    ? '0 10px 30px -10px rgba(239, 68, 68, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3)'
-                    : '0 10px 30px -10px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2)';
+                    ? isDark
+                      ? '0 10px 30px -10px rgba(239, 68, 68, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3)'
+                      : '0 10px 25px -5px rgba(239, 68, 68, 0.08), 0 4px 10px -2px rgba(239, 68, 68, 0.04)'
+                    : isDark
+                      ? '0 10px 30px -10px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2)'
+                      : '0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 4px 10px -2px rgba(15, 23, 42, 0.03)';
                   e.currentTarget.style.borderColor = dept.isEmergency 
-                    ? 'rgba(239, 68, 68, 0.35)' 
-                    : 'rgba(255, 255, 255, 0.08)';
+                    ? isDark ? 'rgba(239, 68, 68, 0.35)' : 'rgba(239, 68, 68, 0.3)'
+                    : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.09)';
                 }}
               >
                 {/* Top Accent Line */}
@@ -1057,9 +1099,9 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                         <span style={{
                           fontSize: '0.7rem',
                           fontWeight: 800,
-                          color: 'var(--text-muted)',
-                          background: 'rgba(255, 255, 255, 0.06)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          color: isDark ? 'var(--text-muted)' : '#64748b',
+                          background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.06)',
+                          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.08)',
                           padding: '2px 7px',
                           borderRadius: '6px'
                         }}>
@@ -1112,7 +1154,7 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                     className="dept-card-title"
                     style={{
                       fontWeight: 800,
-                      color: '#ffffff',
+                      color: isDark ? '#ffffff' : '#0f172a',
                       lineHeight: 1.3,
                       fontFamily: 'var(--font-heading)'
                     }}
@@ -1121,15 +1163,30 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                   </h3>
 
                   {/* In-Charge Officer */}
-                  <div className="dept-card-head">
+                  <div 
+                    className="dept-card-head"
+                    style={{
+                      background: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.04)',
+                      border: isDark ? '1px solid rgba(255, 255, 255, 0.07)' : '1px solid rgba(15, 23, 42, 0.07)',
+                      color: isDark ? 'var(--text-secondary)' : '#475569'
+                    }}
+                  >
                     <UserCheck size={13} color="var(--accent-cyan)" />
-                    <span>In-Charge: <strong style={{ color: '#ffffff', fontWeight: 700 }}>{dept.head}</strong></span>
+                    <span>In-Charge: <strong style={{ color: isDark ? '#ffffff' : '#0f172a', fontWeight: 700 }}>{dept.head}</strong></span>
                   </div>
 
                   {/* Issue Scope Tags (Pills) */}
                   <div className="dept-tags-row">
                     {(dept.tags || []).map((tag, idx) => (
-                      <span key={idx} className="dept-tag-item">
+                      <span 
+                        key={idx} 
+                        className="dept-tag-item"
+                        style={{
+                          color: isDark ? '#94a3b8' : '#334155',
+                          background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0'
+                        }}
+                      >
                         {tag}
                       </span>
                     ))}
@@ -1140,31 +1197,41 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                     className="dept-contact-box"
                     style={{
                       background: dept.isEmergency 
-                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(220, 38, 38, 0.08) 100%)' 
-                        : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%)',
+                        ? isDark 
+                          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(220, 38, 38, 0.08) 100%)'
+                          : 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.03) 100%)' 
+                        : isDark
+                          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%)'
+                          : 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.03) 100%)',
                       border: dept.isEmergency 
-                        ? '1px solid rgba(239, 68, 68, 0.4)' 
-                        : '1px solid rgba(59, 130, 246, 0.3)'
+                        ? isDark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(239, 68, 68, 0.25)' 
+                        : isDark ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(37, 99, 235, 0.2)'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                       <div 
                         className="dept-contact-icon"
                         style={{
-                          background: dept.isEmergency ? 'rgba(239, 68, 68, 0.28)' : 'rgba(59, 130, 246, 0.25)',
-                          color: dept.isEmergency ? '#fca5a5' : '#60a5fa'
+                          background: dept.isEmergency 
+                            ? isDark ? 'rgba(239, 68, 68, 0.28)' : 'rgba(239, 68, 68, 0.16)' 
+                            : isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(37, 99, 235, 0.14)',
+                          color: dept.isEmergency 
+                            ? isDark ? '#fca5a5' : '#dc2626' 
+                            : isDark ? '#60a5fa' : '#2563eb'
                         }}
                       >
                         <PhoneCall size={16} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '0.67rem', color: isDark ? 'var(--text-muted)' : '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {dept.helplineLabel}
                         </div>
                         <div 
                           className="dept-phone-text"
                           style={{
-                            color: dept.isEmergency ? '#fca5a5' : '#93c5fd'
+                            color: dept.isEmergency 
+                              ? isDark ? '#fca5a5' : '#dc2626' 
+                              : isDark ? '#93c5fd' : '#1d4ed8'
                           }}
                         >
                           {dept.helpline}
@@ -1181,7 +1248,7 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                           background: dept.isEmergency 
                             ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
                             : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                          color: '#ffffff',
+                          color: '#ffffff !important',
                           borderColor: dept.isEmergency ? '#f87171' : '#60a5fa'
                         }}
                       >
@@ -1192,8 +1259,13 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                         onClick={() => handleCopy(dept.helpline, 'phone', dept.id)}
                         title="Copy Helpline Number"
                         className="btn-copy-icon"
+                        style={{
+                          background: isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9',
+                          border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
+                          color: isDark ? 'var(--text-muted)' : '#64748b'
+                        }}
                       >
-                        {isPhoneCopied ? <Check size={13} color="#34d399" /> : <Copy size={13} />}
+                        {isPhoneCopied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
                       </button>
                     </div>
                   </div>
@@ -1202,22 +1274,22 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                   <div 
                     className="dept-contact-box"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                      background: isDark ? 'rgba(15, 23, 42, 0.7)' : '#f8fafc',
+                      border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.08)'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                       <div 
                         className="dept-contact-icon"
                         style={{
-                          background: 'rgba(6, 182, 212, 0.16)',
-                          color: 'var(--accent-cyan)'
+                          background: isDark ? 'rgba(6, 182, 212, 0.16)' : 'rgba(6, 182, 212, 0.12)',
+                          color: isDark ? 'var(--accent-cyan)' : '#0891b2'
                         }}
                       >
                         <Mail size={15} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                        <div style={{ fontSize: '0.67rem', color: isDark ? 'var(--text-muted)' : '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                           Official Complaint Mail
                         </div>
                         <a 
@@ -1228,7 +1300,8 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                             display: 'block',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            color: isDark ? '#e2e8f0' : '#1e293b'
                           }}
                         >
                           {dept.email}
@@ -1241,8 +1314,13 @@ export default function DepartmentDirectory({ onSelectDepartment }) {
                         onClick={() => handleCopy(dept.email, 'email', dept.id)}
                         title="Copy Email Address"
                         className="btn-copy-icon"
+                        style={{
+                          background: isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9',
+                          border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
+                          color: isDark ? 'var(--text-muted)' : '#64748b'
+                        }}
                       >
-                        {isEmailCopied ? <Check size={13} color="#34d399" /> : <Copy size={13} />}
+                        {isEmailCopied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
                       </button>
                     </div>
                   </div>

@@ -49,31 +49,9 @@ class AssignmentService {
    * Finds the appropriate department ID for a predicted category and location jurisdiction
    */
   getDepartmentForCategory(category, location = {}) {
-    let deptName = DEPT_MAP[category] || category || 'Roads & Public Works';
-
-    // Location-aware routing overrides:
-    const isAdminRural = location.administrative_type === 'Rural' || Boolean(location.block);
-    const isAdminUrban = location.administrative_type === 'Urban' || Boolean(location.municipality);
-
-    // 1. Water supply routing
-    if (category === 'Water Supply' || category === 'Water') {
-      deptName = isAdminRural ? 'Public Health & Sanitation' : 'Water Supply';
-    }
-
-    // 2. Drainage & Sewage routing
-    if (category === 'Drainage & Sewerage' || category === 'Drainage & Sewage') {
-      deptName = isAdminUrban ? 'Drainage & Sewerage' : 'Public Health & Sanitation';
-    }
-
-    // 3. Roads routing
-    if (category === 'Roads & Public Works' || category === 'Road Damage') {
-      deptName = isAdminUrban ? 'Building & Municipal Engineering' : 'Roads & Public Works';
-    }
-
-    // 4. Crime & Law Enforcement routing
-    if (['Police & Law Enforcement', 'Cyber Crime', 'Women & Child Safety'].includes(category)) {
-      deptName = category;
-    }
+    // Uniform state-wide rule for all areas of West Bengal (both rural blocks and urban municipalities):
+    // Every category maps directly 1-to-1 to its dedicated department.
+    const deptName = DEPT_MAP[category] || category || 'Roads & Public Works';
 
     const dept = db.prepare('SELECT id, name FROM departments WHERE name = ?').get(deptName);
     if (dept) return dept.id;

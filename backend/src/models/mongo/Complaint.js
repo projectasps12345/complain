@@ -70,7 +70,14 @@ const complaintSchema = new mongoose.Schema({
   sla_deadline: { type: Date, default: null },
   resolved_at: { type: Date, default: null },
   resolution_image_url: { type: String, default: null },
-  resolution_notes: { type: String, default: null }
+  resolution_notes: { type: String, default: null },
+  resolution_evidence_id: { type: Number, default: null },
+  text_priority: { type: String, default: null },
+  visual_priority: { type: String, default: null },
+  final_priority: { type: String, default: null },
+  visual_analysis_id: { type: Number, default: null },
+  admin_override: { type: Boolean, default: false },
+  admin_override_reason: { type: String, default: null }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

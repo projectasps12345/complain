@@ -18,6 +18,9 @@ class RelationalStorage {
       complaint_timeline: [],
       feedback: [],
       notifications: [],
+      complaint_evidence: [],
+      visual_analyses: [],
+      evidence_audit_logs: [],
       districts: [],
       subdivisions: [],
       ulbs: [],
@@ -34,6 +37,9 @@ class RelationalStorage {
         complaint_timeline: 1,
         feedback: 1,
         notifications: 1,
+        complaint_evidence: 1,
+        visual_analyses: 1,
+        evidence_audit_logs: 1,
         districts: 1,
         subdivisions: 1,
         ulbs: 1,
@@ -666,10 +672,10 @@ class RelationalStorage {
           c.resolved_at = now;
           c.updated_at = now;
         }
-        if (qLower.includes('is_escalated = ?')) {
-          c.is_escalated = Number(params[0]);
-          c.escalation_level = Number(params[1]);
-          c.escalated_to = params[2];
+        if (qLower.includes('is_escalated')) {
+          const currentLevel = c.escalation_level || 0;
+          c.is_escalated = 1;
+          c.escalation_level = Math.min(3, currentLevel + 1);
           c.updated_at = now;
         }
         if (qLower.includes('department_id = ?')) {
@@ -716,13 +722,16 @@ class RelationalStorage {
       
       if (deptCount > 0) {
         console.log('\x1b[36m%s\x1b[0m', '⚡ [MongoDB Atlas] Syncing collections from Cloud to memory...');
-        const [depts, users, complaints, timeline, feedback, notifs] = await Promise.all([
+        const [depts, users, complaints, timeline, feedback, notifs, evidence, visual, audits] = await Promise.all([
           mongoModels.Department.find().lean(),
           mongoModels.User.find().lean(),
           mongoModels.Complaint.find().lean(),
           mongoModels.ComplaintTimeline.find().lean(),
           mongoModels.Feedback.find().lean(),
-          mongoModels.Notification.find().lean()
+          mongoModels.Notification.find().lean(),
+          mongoModels.ComplaintEvidence.find().lean(),
+          mongoModels.VisualAnalysis.find().lean(),
+          mongoModels.EvidenceAuditLog.find().lean()
         ]);
 
         if (depts.length) this.data.departments = depts.map(d => ({ ...d, id: d.id || d._id }));
@@ -731,6 +740,9 @@ class RelationalStorage {
         if (timeline.length) this.data.complaint_timeline = timeline.map(t => ({ ...t, id: t.id || t._id }));
         if (feedback.length) this.data.feedback = feedback.map(f => ({ ...f, id: f.id || f._id }));
         if (notifs.length) this.data.notifications = notifs.map(n => ({ ...n, id: n.id || n._id }));
+        if (evidence && evidence.length) this.data.complaint_evidence = evidence.map(e => ({ ...e, id: e.id || e._id }));
+        if (visual && visual.length) this.data.visual_analyses = visual.map(v => ({ ...v, id: v.id || v._id }));
+        if (audits && audits.length) this.data.evidence_audit_logs = audits.map(a => ({ ...a, id: a.id || a._id }));
 
         // Update counter sequences
         this.data._counters.departments = Math.max(...this.data.departments.map(d => d.id || 0), 0) + 1;
@@ -739,9 +751,12 @@ class RelationalStorage {
         this.data._counters.complaint_timeline = Math.max(...this.data.complaint_timeline.map(t => t.id || 0), 0) + 1;
         this.data._counters.feedback = Math.max(...this.data.feedback.map(f => f.id || 0), 0) + 1;
         this.data._counters.notifications = Math.max(...this.data.notifications.map(n => n.id || 0), 0) + 1;
+        this.data._counters.complaint_evidence = Math.max(...(this.data.complaint_evidence || []).map(e => e.id || 0), 0) + 1;
+        this.data._counters.visual_analyses = Math.max(...(this.data.visual_analyses || []).map(v => v.id || 0), 0) + 1;
+        this.data._counters.evidence_audit_logs = Math.max(...(this.data.evidence_audit_logs || []).map(a => a.id || 0), 0) + 1;
 
         this.save();
-        console.log('\x1b[32m%s\x1b[0m', `✓ [MongoDB Atlas] Synced ${complaints.length} complaints, ${users.length} users, ${depts.length} departments.`);
+        console.log('\x1b[32m%s\x1b[0m', `✓ [MongoDB Atlas] Synced ${complaints.length} complaints, ${users.length} users, ${depts.length} departments, ${(evidence || []).length} evidence files.`);
       } else {
         console.log('\x1b[36m%s\x1b[0m', '⚡ [MongoDB Atlas] Empty cluster detected. Uploading seed data to Atlas...');
         await this.syncAllToMongo();
@@ -799,6 +814,164 @@ class RelationalStorage {
     } catch (e) {
       // silent catch
     }
+  }
+
+  // --- Evidence Management & Visual AI Methods ---
+  insertEvidence(evidenceData) {
+    this.load();
+    if (!this.data.complaint_evidence) this.data.complaint_evidence = [];
+    const id = this.data._counters.complaint_evidence++;
+    const now = new Date().toISOString();
+
+    const record = {
+      id,
+      complaint_id: Number(evidenceData.complaint_id),
+      uploaded_by: Number(evidenceData.uploaded_by),
+      cloudinary_public_id: evidenceData.cloudinary_public_id,
+      cloudinary_url: evidenceData.cloudinary_url,
+      secure_url: evidenceData.secure_url,
+      resource_type: evidenceData.resource_type || 'image',
+      format: evidenceData.format || 'jpg',
+      original_filename: evidenceData.original_filename || 'evidence',
+      file_size: Number(evidenceData.file_size || 0),
+      width: evidenceData.width ? Number(evidenceData.width) : null,
+      height: evidenceData.height ? Number(evidenceData.height) : null,
+      duration: evidenceData.duration ? Number(evidenceData.duration) : null,
+      thumbnail_url: evidenceData.thumbnail_url || null,
+      blurred_url: evidenceData.blurred_url || null,
+      ai_analysis_id: evidenceData.ai_analysis_id || null,
+      evidence_type: evidenceData.evidence_type || 'initial',
+      is_sensitive: Boolean(evidenceData.is_sensitive),
+      created_at: now,
+      updated_at: now
+    };
+
+    this.data.complaint_evidence.push(record);
+    this.save();
+    this.pushToMongo('ComplaintEvidence', { id }, record);
+    return record;
+  }
+
+  getEvidenceByComplaintId(complaintId) {
+    this.load();
+    const list = this.data.complaint_evidence || [];
+    return list.filter(e => Number(e.complaint_id) === Number(complaintId));
+  }
+
+  getEvidenceById(id) {
+    this.load();
+    const list = this.data.complaint_evidence || [];
+    return list.find(e => Number(e.id) === Number(id));
+  }
+
+  deleteEvidence(id) {
+    this.load();
+    const list = this.data.complaint_evidence || [];
+    const idx = list.findIndex(e => Number(e.id) === Number(id));
+    if (idx !== -1) {
+      const removed = list.splice(idx, 1)[0];
+      this.save();
+      // Also delete from MongoDB if connected
+      try {
+        const mongoModels = require('./mongo');
+        if (mongoModels.ComplaintEvidence) {
+          mongoModels.ComplaintEvidence.deleteOne({ id: Number(id) }).catch(() => {});
+        }
+      } catch (e) {}
+      return removed;
+    }
+    return null;
+  }
+
+  insertVisualAnalysis(analysisData) {
+    this.load();
+    if (!this.data.visual_analyses) this.data.visual_analyses = [];
+    const id = this.data._counters.visual_analyses++;
+    const now = new Date().toISOString();
+
+    const record = {
+      id,
+      complaint_id: Number(analysisData.complaint_id),
+      complaint_evidence_id: Number(analysisData.complaint_evidence_id),
+      model_name: analysisData.model_name || 'CivicPulse-Vision-Engine-v2',
+      model_version: analysisData.model_version || '2.0.0',
+      image_quality: analysisData.image_quality || 'GOOD',
+      quality_metrics: analysisData.quality_metrics || {
+        blur_score: 0,
+        brightness: 0,
+        contrast: 0,
+        width: 0,
+        height: 0,
+        resolution_label: 'Standard'
+      },
+      detected_objects: analysisData.detected_objects || [],
+      visual_severity: analysisData.visual_severity || 'MEDIUM',
+      visual_risk: analysisData.visual_risk || 'Moderate',
+      evidence_consistency: analysisData.evidence_consistency || 'MATCH',
+      consistency_details: analysisData.consistency_details || '',
+      confidence: Number(analysisData.confidence || 0.9),
+      analysis_status: analysisData.analysis_status || 'COMPLETED',
+      recommended_action: analysisData.recommended_action || '',
+      raw_response: analysisData.raw_response || null,
+      created_at: now,
+      updated_at: now
+    };
+
+    this.data.visual_analyses.push(record);
+
+    // Link back to evidence record if exists
+    const evidence = this.getEvidenceById(record.complaint_evidence_id);
+    if (evidence) {
+      evidence.ai_analysis_id = id;
+    }
+
+    this.save();
+    this.pushToMongo('VisualAnalysis', { id }, record);
+    return record;
+  }
+
+  getVisualAnalysisByComplaintId(complaintId) {
+    this.load();
+    const list = this.data.visual_analyses || [];
+    return list.filter(v => Number(v.complaint_id) === Number(complaintId));
+  }
+
+  getVisualAnalysisById(id) {
+    this.load();
+    const list = this.data.visual_analyses || [];
+    return list.find(v => Number(v.id) === Number(id));
+  }
+
+  logEvidenceAudit(auditData) {
+    this.load();
+    if (!this.data.evidence_audit_logs) this.data.evidence_audit_logs = [];
+    const id = this.data._counters.evidence_audit_logs++;
+    const now = new Date().toISOString();
+
+    const record = {
+      id,
+      complaint_id: Number(auditData.complaint_id),
+      evidence_id: auditData.evidence_id ? Number(auditData.evidence_id) : null,
+      cloudinary_public_id: auditData.cloudinary_public_id || null,
+      action: auditData.action, // 'UPLOAD' | 'VIEW' | 'DELETE' | 'REPLACE' | 'ANALYZE'
+      user_id: Number(auditData.user_id),
+      user_role: auditData.user_role || 'citizen',
+      user_name: auditData.user_name || 'User',
+      ip_address: auditData.ip_address || '127.0.0.1',
+      details: auditData.details || '',
+      timestamp: now
+    };
+
+    this.data.evidence_audit_logs.push(record);
+    this.save();
+    this.pushToMongo('EvidenceAuditLog', { id }, record);
+    return record;
+  }
+
+  getEvidenceAuditLogs(complaintId) {
+    this.load();
+    const list = this.data.evidence_audit_logs || [];
+    return list.filter(a => Number(a.complaint_id) === Number(complaintId));
   }
 }
 

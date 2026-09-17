@@ -30,9 +30,7 @@ export default function DepartmentsPage({ setCurrentRoute }) {
               borderRadius: '10px',
               fontSize: '0.84rem',
               fontWeight: 700,
-              background: 'rgba(30, 41, 59, 0.75)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              transition: 'all 0.2s ease'
+              cursor: 'pointer'
             }}
           >
             <ArrowLeft size={15} /> Back to City Map & Heatmap
@@ -50,9 +48,9 @@ export default function DepartmentsPage({ setCurrentRoute }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              color: '#38bdf8',
-              background: 'rgba(56, 189, 248, 0.1)',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
+              color: 'var(--accent-primary)',
+              background: 'rgba(37, 99, 235, 0.1)',
+              border: '1px solid rgba(37, 99, 235, 0.25)',
               padding: '4px 10px',
               borderRadius: '20px',
               fontWeight: 700
@@ -63,7 +61,7 @@ export default function DepartmentsPage({ setCurrentRoute }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              color: '#f87171',
+              color: '#ef4444',
               background: 'rgba(239, 68, 68, 0.1)',
               border: '1px solid rgba(239, 68, 68, 0.25)',
               padding: '4px 10px',

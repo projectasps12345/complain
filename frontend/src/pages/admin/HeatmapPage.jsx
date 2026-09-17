@@ -5,7 +5,6 @@ import {
   MapPin, 
   AlertTriangle, 
   Layers, 
-  ArrowLeft, 
   ShieldAlert,
   SlidersHorizontal,
   CheckCircle2,
@@ -334,12 +333,6 @@ export default function HeatmapPage({ setCurrentRoute, setSelectedComplaintId })
               title="Reset all filters"
             >
               <RefreshCw size={14} /> Reset Filters
-            </button>
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => setCurrentRoute('admin-dashboard')}
-            >
-              <ArrowLeft size={16} /> Back to Admin Portal
             </button>
           </div>
         </div>

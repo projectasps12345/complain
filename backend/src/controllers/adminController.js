@@ -78,6 +78,16 @@ class AdminController {
         );
       }
 
+      complaints = complaints.map(c => {
+        const evidence = db.getEvidenceByComplaintId(c.id);
+        const visualAnalyses = db.getVisualAnalysisByComplaintId(c.id);
+        return {
+          ...c,
+          evidence,
+          visual_analyses: visualAnalyses
+        };
+      });
+
       res.json({
         total: complaints.length,
         complaints
@@ -132,6 +142,93 @@ class AdminController {
       });
     } catch (err) {
       res.status(500).json({ error: 'Failed to override department' });
+    }
+  }
+
+  /**
+   * Manual override of Priority (e.g. following AI visual inspection)
+   */
+  overridePriority(req, res) {
+    try {
+      const { id } = req.params;
+      const { priority, reason } = req.body;
+
+      const complaint = db.prepare('SELECT * FROM complaints WHERE id = ?').get(id);
+      if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+
+      const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+      if (!validPriorities.includes(priority)) {
+        return res.status(400).json({ error: 'Invalid priority level. Must be LOW, MEDIUM, HIGH, or CRITICAL.' });
+      }
+
+      const slaHours = priority === 'CRITICAL' ? 24 : (priority === 'HIGH' ? 48 : (priority === 'MEDIUM' ? 72 : 120));
+      const slaDeadline = new Date(Date.now() + slaHours * 60 * 60 * 1000).toISOString();
+
+      db.prepare(`
+        UPDATE complaints
+        SET priority = ?,
+            final_priority = ?,
+            admin_override = 1,
+            admin_override_reason = ?,
+            sla_deadline = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(priority, priority, reason || 'Manual administrative risk adjustment', slaDeadline, complaint.id);
+
+      db.prepare(`
+        INSERT INTO complaint_timeline (complaint_id, status, notes, updated_by_name, updated_by_user_id)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(
+        complaint.id,
+        complaint.status,
+        `Admin priority override: Updated from ${complaint.priority} to ${priority}. Reason: ${reason || 'Manual administrative risk adjustment'}.`,
+        req.user.name || 'Admin',
+        req.user.id
+      );
+
+      const updated = db.prepare('SELECT * FROM complaints WHERE id = ?').get(complaint.id);
+      res.json({ message: `Priority overridden to ${priority}`, complaint: updated });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to override priority' });
+    }
+  }
+
+  /**
+   * Manual override of Category
+   */
+  overrideCategory(req, res) {
+    try {
+      const { id } = req.params;
+      const { category, subcategory, reason } = req.body;
+
+      const complaint = db.prepare('SELECT * FROM complaints WHERE id = ?').get(id);
+      if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+
+      db.prepare(`
+        UPDATE complaints
+        SET category = ?,
+            subcategory = ?,
+            admin_override = 1,
+            admin_override_reason = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(category, subcategory || null, reason || 'Manual administrative category adjustment', complaint.id);
+
+      db.prepare(`
+        INSERT INTO complaint_timeline (complaint_id, status, notes, updated_by_name, updated_by_user_id)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(
+        complaint.id,
+        complaint.status,
+        `Admin category override: Changed to ${category} (${subcategory || 'General'}). Reason: ${reason || 'Manual category correction'}.`,
+        req.user.name || 'Admin',
+        req.user.id
+      );
+
+      const updated = db.prepare('SELECT * FROM complaints WHERE id = ?').get(complaint.id);
+      res.json({ message: `Category updated to ${category}`, complaint: updated });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to override category' });
     }
   }
 

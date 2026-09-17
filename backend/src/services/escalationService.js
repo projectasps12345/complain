@@ -39,15 +39,32 @@ class EscalationService {
     `);
 
     for (const c of overdueComplaints) {
-      if (c.escalation_level < 3) {
+      const currentLevel = c.escalation_level || 0;
+      const deadlineDate = new Date(c.sla_deadline);
+      const breachAgeHours = (Date.now() - deadlineDate.getTime()) / (1000 * 60 * 60);
+
+      let targetLevel = 0;
+      let levelTitle = '';
+
+      if (currentLevel < 1) {
+        targetLevel = 1;
+        levelTitle = 'Department Head';
+      } else if (currentLevel < 2 && breachAgeHours >= 24) {
+        targetLevel = 2;
+        levelTitle = 'Municipal Commissioner';
+      } else if (currentLevel < 3 && breachAgeHours >= 48) {
+        targetLevel = 3;
+        levelTitle = 'Mayor / Vigilance';
+      }
+
+      // Only escalate if a new level target has been reached
+      if (targetLevel > currentLevel) {
         updateStmt.run(c.id);
-        const newLevel = c.escalation_level + 1;
-        const levelTitle = newLevel === 1 ? 'Department Head' : newLevel === 2 ? 'Municipal Commissioner' : 'Mayor / Vigilance';
 
         timelineStmt.run(
           c.id,
           c.status,
-          `⚠️ SLA Violation Detected! Ticket automatically escalated to Level ${newLevel} (${levelTitle}).`
+          `⚠️ SLA Violation Detected! Ticket automatically escalated to Level ${targetLevel} (${levelTitle}).`
         );
 
         // Notify citizen

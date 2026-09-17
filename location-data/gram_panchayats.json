@@ -1,5 +1,5 @@
 [
-  { "id": 1, "block_id": 1, "name": "Adhata Gram Panchayat", "code": "ADH-GP", "headquarters": "Adhata", "lat": 22.8050, "lng": 88.5250, "is_active": 1 },
+  { "id": 1, "block_id": 1, "name": "Adhata Gram Panchayat", "code": "ADH-GP", "headquarters": "Adhata", "lat": 22.8683, "lng": 88.5334, "is_active": 1 },
   { "id": 2, "block_id": 1, "name": "Amdanga Gram Panchayat", "code": "AMD-GP", "headquarters": "Amdanga", "lat": 22.8000, "lng": 88.5200, "is_active": 1 },
   { "id": 3, "block_id": 1, "name": "Bodai Gram Panchayat", "code": "BOD-GP", "headquarters": "Bodai", "lat": 22.7850, "lng": 88.5300, "is_active": 1 },
   { "id": 4, "block_id": 1, "name": "Maricha Gram Panchayat", "code": "MRC-GP", "headquarters": "Maricha", "lat": 22.8150, "lng": 88.5100, "is_active": 1 },

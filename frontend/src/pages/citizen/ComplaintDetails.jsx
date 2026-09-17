@@ -21,6 +21,7 @@ import {
 import api from '../../services/api';
 import Timeline from '../../components/complaint/Timeline';
 import FeedbackModal from '../../components/complaint/FeedbackModal';
+import EvidenceGallery from '../../components/complaint/EvidenceGallery';
 import { useToast } from '../../components/ui/Toast';
 
 export default function ComplaintDetails({ complaintId, setCurrentRoute }) {
@@ -301,44 +302,22 @@ export default function ComplaintDetails({ complaintId, setCurrentRoute }) {
           <Timeline history={timeline} currentStatus={complaint.status} />
         </div>
 
-        {/* Photos (Before & After Resolution) */}
-        {(complaint.image_url || complaint.resolution_image_url) && (
-          <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '16px' }}>
-              Photo Verification
-            </h3>
-            <div className="grid-cols-2">
-              {complaint.image_url && (
-                <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                    Citizen Incident Photo (Before):
-                  </div>
-                  <img 
-                    src={complaint.image_url} 
-                    alt="Citizen Upload" 
-                    style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}
-                  />
-                </div>
-              )}
-
-              {complaint.resolution_image_url && (
-                <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-emerald)', marginBottom: '8px' }}>
-                    Officer Resolution Proof (After):
-                  </div>
-                  <img 
-                    src={complaint.resolution_image_url} 
-                    alt="Resolution Proof" 
-                    style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.4)' }}
-                  />
-                  {complaint.resolution_notes && (
-                    <div style={{ marginTop: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
-                      <strong>Officer Notes:</strong> {complaint.resolution_notes}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+        {/* Photos & Multi-Media Evidence Gallery (Before & After Resolution) */}
+        {((complaint.evidence && complaint.evidence.length > 0) || complaint.image_url || complaint.resolution_image_url) && (
+          <div style={{ marginBottom: '24px' }}>
+            <EvidenceGallery 
+              evidence={complaint.evidence || []}
+              initialImageUrl={complaint.image_url}
+              resolutionImage={complaint.resolution_image_url}
+              resolutionNotes={complaint.resolution_notes}
+              isCrime={complaint.is_crime || ['Police & Law Enforcement', 'Cyber Crime', 'Women & Child Safety'].includes(complaint.category)}
+              complaintId={complaint.id}
+              trackingId={complaint.tracking_id}
+              status={complaint.status}
+              onConfirmResolution={() => setIsFeedbackOpen(true)}
+              onReopenComplaint={() => setIsReopenOpen(true)}
+              userRole="citizen"
+            />
           </div>
         )}
 

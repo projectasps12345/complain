@@ -2,6 +2,8 @@ const db = require('../models/db');
 const mlClient = require('../services/mlClient');
 const assignmentService = require('../services/assignmentService');
 const imageVerificationService = require('../services/imageVerificationService');
+const cloudinaryService = require('../services/cloudinaryService');
+const upload = require('../middleware/uploadMiddleware');
 
 class ComplaintController {
   /**
@@ -146,29 +148,89 @@ class ComplaintController {
       const departmentId = assignmentService.getDepartmentForCategory(finalCategory, locationContext);
       const officerId = assignmentService.findBestOfficer(departmentId, locationContext);
 
-      // 4. Calculate SLA Deadline
-      const slaDeadline = new Date(Date.now() + slaHours * 60 * 60 * 1000).toISOString();
-
       // Tracking ID: CMP-{Year}-{Random 5 digits}
       const trackingId = `CMP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
-      // Image attachment handling & AI Image Verification
-      let imageUrl = null;
-      let imageVerificationReport = null;
-      if (req.file) {
-        imageUrl = `/uploads/${req.file.filename}`;
-      } else if (req.body.image_url) {
-        imageUrl = req.body.image_url;
+      // 4. Multi-File Cloudinary Evidence Processing
+      let rawFiles = [];
+      if (req.files) {
+        if (Array.isArray(req.files)) rawFiles = req.files;
+        else {
+          if (req.files.evidence) rawFiles = rawFiles.concat(req.files.evidence);
+          if (req.files.image) rawFiles = rawFiles.concat(req.files.image);
+        }
+      } else if (req.file) {
+        rawFiles = [req.file];
       }
 
-      if (imageUrl) {
-        imageVerificationReport = imageVerificationService.verifyImage(imageUrl, finalCategory, finalSubcategory, description);
+      const uploadedEvidenceItems = [];
+      let primaryImageUrl = req.body.image_url || null;
+      let primaryVisualAnalysis = null;
+
+      for (const file of rawFiles) {
+        const validation = upload.validateUploadedFile(file);
+        if (validation.valid) {
+          const isVideo = validation.isVideo;
+          const uploadRes = await cloudinaryService.uploadEvidence(file.path, {
+            complaintId: trackingId,
+            folderType: isVideo ? 'videos' : 'images',
+            resourceType: isVideo ? 'video' : 'image',
+            originalFilename: file.originalname,
+            tags: ['complaint', finalCategory]
+          });
+
+          uploadedEvidenceItems.push({
+            file,
+            uploadRes,
+            isVideo
+          });
+
+          if (!isVideo && !primaryImageUrl) {
+            primaryImageUrl = uploadRes.secure_url;
+          }
+        }
+      }
+
+      // 5. AI Computer Vision & Multimodal Priority Fusion
+      if (primaryImageUrl) {
+        try {
+          primaryVisualAnalysis = await mlClient.analyzeVisualEvidence({
+            imageUrl: primaryImageUrl,
+            textCategory: finalCategory,
+            textSubcategory: finalSubcategory,
+            description: description.trim()
+          });
+        } catch (visErr) {
+          console.warn('Initial visual analysis failed:', visErr.message);
+        }
+      }
+
+      // Fuse Text + Vision + Location + Density
+      const multimodalResult = await mlClient.fuseMultimodalPriority({
+        text_priority: predictedPriority,
+        text_category: finalCategory,
+        text_subcategory: finalSubcategory,
+        visual_severity: primaryVisualAnalysis?.visual_severity,
+        visual_label: primaryVisualAnalysis?.detected_label,
+        location_type: location_type || 'Residential',
+        affected_count: Number(affected_count) || 50,
+        is_emergency: isEmergencyDetected,
+        evidence_consistency: primaryVisualAnalysis?.evidence_consistency || 'MATCH'
+      });
+
+      const finalPriority = multimodalResult.final_priority || predictedPriority;
+      const effectiveSlaHours = isEmergencyDetected ? 24 : (multimodalResult.sla_hours || slaHours);
+      const slaDeadline = new Date(Date.now() + effectiveSlaHours * 60 * 60 * 1000).toISOString();
+
+      let imageVerificationReport = null;
+      if (primaryImageUrl) {
+        imageVerificationReport = imageVerificationService.verifyImage(primaryImageUrl, finalCategory, finalSubcategory, description);
       }
 
       const locationLabel = village || locality || ward || municipality || block || 'West Bengal';
       const complaintTitle = title && title.trim() ? title.trim() : `${finalCategory} - ${finalSubcategory} at ${locationLabel}`;
 
-      // Insert Complaint with full normalized location hierarchy
+      // Insert Complaint with full normalized location hierarchy & multimodal priorities
       const insertInfo = db.insertComplaint({
         tracking_id: trackingId,
         citizen_id: citizenId,
@@ -176,7 +238,10 @@ class ComplaintController {
         description: description.trim(),
         category: finalCategory,
         subcategory: finalSubcategory,
-        priority: predictedPriority,
+        priority: finalPriority,
+        text_priority: predictedPriority,
+        visual_priority: primaryVisualAnalysis?.visual_severity || predictedPriority,
+        final_priority: finalPriority,
         status: officerId ? 'Assigned' : 'Verified',
         department_id: departmentId,
         officer_id: officerId,
@@ -209,7 +274,7 @@ class ComplaintController {
         postal_code: postal_code || '',
         location_type: location_type || 'Residential',
         affected_count: Number(affected_count) || 50,
-        image_url: imageUrl,
+        image_url: primaryImageUrl,
         image_verification_report: imageVerificationReport,
         impact_score: mlRes.impact_assessment?.score || mlRes.summary?.impact_score || 50,
         impact_label: mlRes.impact_assessment?.label || mlRes.summary?.impact_label || 'Moderate Public Impact',
@@ -223,7 +288,7 @@ class ComplaintController {
         duplicate_similarity: dupSim,
         ml_confidence: mlConfidence,
         ml_predicted_category: predictedCategory,
-        ml_predicted_priority: predictedPriority,
+        ml_predicted_priority: finalPriority,
         predicted_category: predictedCategory,
         predicted_subcategory: predictedSubcategory,
         is_emergency: isEmergencyDetected ? 1 : 0,
@@ -235,11 +300,66 @@ class ComplaintController {
 
       const newComplaintId = insertInfo.id;
 
-      // 5. Add initial timeline log
+      // 6. Record Evidence & Visual Analysis in DB with Audit Trail
+      for (const item of uploadedEvidenceItems) {
+        const evRecord = db.insertEvidence({
+          complaint_id: newComplaintId,
+          uploaded_by: citizenId,
+          cloudinary_public_id: item.uploadRes.cloudinary_public_id,
+          cloudinary_url: item.uploadRes.cloudinary_url,
+          secure_url: item.uploadRes.secure_url,
+          resource_type: item.uploadRes.resource_type,
+          format: item.uploadRes.format,
+          original_filename: item.uploadRes.original_filename,
+          file_size: item.uploadRes.file_size,
+          width: item.uploadRes.width,
+          height: item.uploadRes.height,
+          duration: item.uploadRes.duration,
+          thumbnail_url: item.uploadRes.thumbnail_url,
+          blurred_url: cloudinaryService.getBlurredUrl(item.uploadRes.cloudinary_public_id, { resourceType: item.uploadRes.resource_type }),
+          evidence_type: 'initial',
+          is_sensitive: Boolean(isCrimeDetected)
+        });
+
+        db.logEvidenceAudit({
+          complaint_id: newComplaintId,
+          evidence_id: evRecord.id,
+          cloudinary_public_id: item.uploadRes.cloudinary_public_id,
+          action: 'UPLOAD',
+          user_id: citizenId,
+          user_role: req.user.role,
+          user_name: req.user.name,
+          ip_address: req.ip || '127.0.0.1',
+          details: `Uploaded ${item.file.originalname} (${(item.file.size / (1024 * 1024)).toFixed(2)} MB)`
+        });
+
+        // If primary visual analysis, link to evidence
+        if (primaryVisualAnalysis && !item.isVideo && !primaryVisualAnalysis.saved) {
+          const vRecord = db.insertVisualAnalysis({
+            complaint_id: newComplaintId,
+            complaint_evidence_id: evRecord.id,
+            model_name: primaryVisualAnalysis.model_name,
+            model_version: primaryVisualAnalysis.model_version,
+            image_quality: primaryVisualAnalysis.image_quality,
+            quality_metrics: primaryVisualAnalysis.quality_metrics,
+            detected_objects: primaryVisualAnalysis.detected_objects,
+            visual_severity: primaryVisualAnalysis.visual_severity,
+            visual_risk: primaryVisualAnalysis.visual_risk,
+            evidence_consistency: primaryVisualAnalysis.evidence_consistency,
+            consistency_details: primaryVisualAnalysis.consistency_details,
+            confidence: primaryVisualAnalysis.confidence,
+            analysis_status: primaryVisualAnalysis.analysis_status,
+            recommended_action: primaryVisualAnalysis.recommended_action
+          });
+          primaryVisualAnalysis.saved = true;
+        }
+      }
+
+      // 7. Add initial timeline log
       db.prepare(`
         INSERT INTO complaint_timeline (complaint_id, status, notes, updated_by_name, updated_by_user_id)
-        VALUES (?, 'Submitted', ?, 'AI Engine', NULL)
-      `).run(newComplaintId, `Registered and analyzed: Category=${finalCategory} (${finalSubcategory}), Priority=${predictedPriority}. Confidence=${(mlConfidence * 100).toFixed(1)}%.`);
+        VALUES (?, 'Submitted', ?, 'Multimodal AI Pipeline', NULL)
+      `).run(newComplaintId, `Registered with Multimodal AI Fusion: Category=${finalCategory}, Priority=${finalPriority} (Text: ${predictedPriority}, Visual: ${primaryVisualAnalysis?.visual_severity || 'N/A'}).`);
 
       if (officerId) {
         db.prepare(`
@@ -355,6 +475,7 @@ class ComplaintController {
   getComplaintById(req, res) {
     try {
       const { id } = req.params;
+      const user = req.user;
       const complaint = db.prepare('SELECT * FROM complaints WHERE id = ?').get(id);
 
       if (!complaint) {
@@ -364,8 +485,43 @@ class ComplaintController {
       const timeline = db.prepare('SELECT * FROM complaint_timeline WHERE complaint_id = ?').all(complaint.id);
       const feedback = db.prepare('SELECT * FROM feedback WHERE complaint_id = ?').get(complaint.id);
 
+      // Fetch Evidence Items and AI Visual Analyses
+      const evidenceList = db.getEvidenceByComplaintId(complaint.id);
+      const visualAnalyses = db.getVisualAnalysisByComplaintId(complaint.id);
+
+      // Check RBAC permissions
+      const isOwner = user && complaint.citizen_id === user.id;
+      const isOfficer = user && user.role === 'officer' && (complaint.officer_id === user.id || complaint.department_id === user.department_id);
+      const isAdmin = user && user.role === 'admin';
+      const hasFullAccess = isOwner || isOfficer || isAdmin;
+
+      // Filter evidence for privacy if sensitive crime report
+      let safeEvidence = evidenceList;
+      if (complaint.is_crime || complaint.is_sensitive) {
+        if (!hasFullAccess) {
+          safeEvidence = [];
+        }
+      }
+
+      const enrichedEvidence = safeEvidence.map(item => {
+        const analysis = visualAnalyses.find(v => v.complaint_evidence_id === item.id || v.id === item.ai_analysis_id);
+        const isCloud = !item.cloudinary_public_id?.startsWith('local_');
+
+        return {
+          ...item,
+          optimized_url: isCloud ? cloudinaryService.getOptimizedUrl(item.cloudinary_public_id, { resourceType: item.resource_type }) : item.secure_url,
+          thumbnail_url: item.thumbnail_url || (isCloud ? cloudinaryService.getThumbnailUrl(item.cloudinary_public_id, { resourceType: item.resource_type }) : item.secure_url),
+          blurred_url: item.blurred_url || (isCloud ? cloudinaryService.getBlurredUrl(item.cloudinary_public_id, { resourceType: item.resource_type }) : item.secure_url),
+          visual_analysis: analysis || null
+        };
+      });
+
       res.json({
-        complaint,
+        complaint: {
+          ...complaint,
+          evidence: enrichedEvidence,
+          visual_analyses: hasFullAccess ? visualAnalyses : []
+        },
         timeline,
         feedback: feedback || null
       });

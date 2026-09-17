@@ -14,6 +14,8 @@ from src.prediction.category_predictor import CategoryPredictor, CATEGORY_DEPART
 from src.prediction.priority_predictor import PriorityPredictor
 from src.prediction.duplicate_engine import DuplicateEngine
 from src.prediction.resolution_predictor import ResolutionPredictor
+from src.prediction.vision_engine import vision_engine
+from src.prediction.multimodal_fusion import multimodal_fusion
 
 app = FastAPI(
     title="CivicPulse AI ML Service",
@@ -224,6 +226,49 @@ def predict_all(req: AllInOneRequest):
             "override_reason": prio_res.get("override_reason")
         }
     }
+
+# ----------------- Vision AI & Multimodal Endpoints -----------------
+class VisionAnalysisRequest(BaseModel):
+    image_url: Optional[str] = None
+    text_category: Optional[str] = ""
+    text_subcategory: Optional[str] = ""
+    description: Optional[str] = ""
+    model_config = {"extra": "allow"}
+
+class MultimodalFusionRequest(BaseModel):
+    text_priority: Optional[str] = "MEDIUM"
+    text_category: Optional[str] = ""
+    text_subcategory: Optional[str] = ""
+    visual_severity: Optional[str] = None
+    visual_label: Optional[str] = None
+    location_type: Optional[str] = "Residential"
+    affected_count: Optional[int] = 50
+    is_emergency: Optional[bool] = False
+    evidence_consistency: Optional[str] = "MATCH"
+    model_config = {"extra": "allow"}
+
+@app.post("/vision/analyze")
+def analyze_vision(req: VisionAnalysisRequest):
+    return vision_engine.process_evidence(
+        image_url=req.image_url,
+        text_category=req.text_category or "",
+        text_subcategory=req.text_subcategory or "",
+        description=req.description or ""
+    )
+
+@app.post("/multimodal/evaluate")
+def evaluate_multimodal(req: MultimodalFusionRequest):
+    return multimodal_fusion.evaluate(
+        text_priority=req.text_priority or "MEDIUM",
+        text_category=req.text_category or "",
+        text_subcategory=req.text_subcategory or "",
+        visual_severity=req.visual_severity,
+        visual_label=req.visual_label,
+        location_type=req.location_type or "Residential",
+        affected_count=req.affected_count or 50,
+        is_emergency=bool(req.is_emergency),
+        evidence_consistency=req.evidence_consistency or "MATCH"
+    )
 
 if __name__ == "__main__":
     import uvicorn

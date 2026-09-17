@@ -27,7 +27,8 @@ import LocationSelector from '../../components/location/LocationSelector';
 import DuplicateAlert from '../../components/complaint/DuplicateAlert';
 import VoiceInputModal from '../../components/complaint/VoiceInputModal';
 import AIComplaintAssistant from '../../components/complaint/AIComplaintAssistant';
-import ImageVerificationBadge from '../../components/complaint/ImageVerificationBadge';
+import EvidenceUploader from '../../components/complaint/EvidenceUploader';
+import AIImageAnalysisCard from '../../components/complaint/AIImageAnalysisCard';
 
 export default function NewComplaint({ setCurrentRoute, setSelectedComplaintId }) {
   const [title, setTitle] = useState('');
@@ -40,6 +41,10 @@ export default function NewComplaint({ setCurrentRoute, setSelectedComplaintId }
   const [isEmergency, setIsEmergency] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [attachedFiles, setAttachedFiles] = useState([]);
+  const [primaryImageFile, setPrimaryImageFile] = useState(null);
+  const [visualAnalysis, setVisualAnalysis] = useState(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [formLanguage, setFormLanguage] = useState('en'); // 'en', 'bn', 'hi'
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isAssistantModalOpen, setIsAssistantModalOpen] = useState(false);
@@ -87,6 +92,36 @@ export default function NewComplaint({ setCurrentRoute, setSelectedComplaintId }
     }
     setAffectedCount(draft.affected_count);
     setLocationType(draft.location_type);
+  };
+
+  const handlePrimaryImageSelect = async (imgFile) => {
+    setPrimaryImageFile(imgFile);
+    if (!imgFile) {
+      setVisualAnalysis(null);
+      return;
+    }
+
+    setIsAnalyzingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('evidence', imgFile);
+      const cat = selectedCategory !== 'AI Auto Detect' ? selectedCategory : (mlPreview?.category_prediction?.category || '');
+      const subcat = selectedSubcategory !== 'Auto-Infer with AI' ? selectedSubcategory : '';
+      if (cat) fd.append('category', cat);
+      if (subcat) fd.append('subcategory', subcat);
+      fd.append('description', description || title || '');
+
+      const res = await api.post('/evidence/preview-analysis', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data?.analysis) {
+        setVisualAnalysis(res.data.analysis);
+      }
+    } catch (err) {
+      console.warn('Live visual AI preview error:', err);
+    } finally {
+      setIsAnalyzingImage(false);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -226,7 +261,11 @@ export default function NewComplaint({ setCurrentRoute, setSelectedComplaintId }
       formData.append('landmark', locationData.landmark || '');
       formData.append('postal_code', locationData.postal_code || '');
 
-      if (selectedFile) {
+      if (attachedFiles && attachedFiles.length > 0) {
+        attachedFiles.forEach(file => {
+          formData.append('evidence', file);
+        });
+      } else if (selectedFile) {
         formData.append('image', selectedFile);
       }
 
@@ -518,46 +557,19 @@ export default function NewComplaint({ setCurrentRoute, setSelectedComplaintId }
                   </label>
                 </div>
 
-                {/* Evidence Image Upload */}
+                {/* Multi-File Evidence Uploader & Cloudinary Storage */}
                 <div className="form-group">
-                  <label className="form-label">Evidence / Photo Attachment (Optional):</label>
-                  <div style={{
-                    border: '2px dashed var(--border-subtle)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '16px',
-                    textAlign: 'center',
-                    background: 'rgba(15, 23, 42, 0.4)',
-                    cursor: 'pointer'
-                  }}>
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      id="evidence-file"
-                      style={{ display: 'none' }}
-                      onChange={handleFileChange}
-                    />
-                    <label htmlFor="evidence-file" style={{ cursor: 'pointer', display: 'block' }}>
-                      {filePreview ? (
-                        <div>
-                          <img 
-                            src={filePreview} 
-                            alt="Preview" 
-                            style={{ maxHeight: '130px', maxWidth: '100%', borderRadius: '6px', marginBottom: '6px' }} 
-                          />
-                          <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)' }}>Click to replace photo</div>
-                        </div>
-                      ) : (
-                        <div>
-                          <Upload size={24} color="var(--accent-primary)" style={{ margin: '0 auto 6px' }} />
-                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Upload photo / screenshot</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>PNG, JPG, WebP up to 10MB</div>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-
-                  {/* AI Evidence Image Verification Badge */}
-                  <ImageVerificationBadge report={imageVerificationReport} previewUrl={filePreview} />
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Incident Evidence & Proof (Photos / Videos):</span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                      Cloudinary Media Engine
+                    </span>
+                  </label>
+                  <EvidenceUploader 
+                    onFilesChange={(files) => setAttachedFiles(files)}
+                    onPrimaryImageSelect={handlePrimaryImageSelect}
+                    maxFiles={5}
+                  />
                 </div>
 
                 {/* Privacy Badge for Crime Reports */}
@@ -761,6 +773,15 @@ export default function NewComplaint({ setCurrentRoute, setSelectedComplaintId }
                   </div>
                 )}
               </div>
+
+              {/* AI Visual Evidence Analysis Card */}
+              {(visualAnalysis || isAnalyzingImage) && (
+                <AIImageAnalysisCard 
+                  analysis={visualAnalysis}
+                  loading={isAnalyzingImage}
+                  fusedPriority={mlPreview?.priority_prediction?.priority}
+                />
+              )}
             </div>
           </div>
         </div>

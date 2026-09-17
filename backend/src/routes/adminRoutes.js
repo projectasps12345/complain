@@ -9,6 +9,8 @@ router.use(requireRoles('admin'));
 
 router.get('/complaints', (req, res) => adminController.getAllComplaints(req, res));
 router.patch('/complaints/:id/department', (req, res) => adminController.overrideDepartment(req, res));
+router.patch('/complaints/:id/priority', (req, res) => adminController.overridePriority(req, res));
+router.patch('/complaints/:id/category', (req, res) => adminController.overrideCategory(req, res));
 router.patch('/complaints/:id/officer', (req, res) => adminController.assignOfficer(req, res));
 router.get('/departments', (req, res) => adminController.getDepartments(req, res));
 router.get('/officers', (req, res) => adminController.getOfficers(req, res));

@@ -8,8 +8,10 @@ const upload = require('../middleware/uploadMiddleware');
 router.use(authMiddleware);
 router.use(requireRoles('officer', 'admin'));
 
+const resolutionUpload = upload.fields([{ name: 'resolution_image', maxCount: 1 }, { name: 'image', maxCount: 1 }]);
+
 router.get('/tasks', (req, res) => officerController.getMyAssignedTasks(req, res));
-router.patch('/tasks/:id/status', upload.single('resolution_image'), (req, res) => officerController.updateTaskStatus(req, res));
-router.patch('/complaints/:id/status', upload.single('resolution_image'), (req, res) => officerController.updateTaskStatus(req, res));
+router.patch('/tasks/:id/status', resolutionUpload, (req, res) => officerController.updateTaskStatus(req, res));
+router.patch('/complaints/:id/status', resolutionUpload, (req, res) => officerController.updateTaskStatus(req, res));
 
 module.exports = router;
